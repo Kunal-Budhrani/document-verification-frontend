@@ -19,7 +19,7 @@ Install the required dependencies using npm install
 Start the application using npm start
 The application will be available at http://localhost:3000.
 
-Please note that this project depends on another repository, https://github.com/Kunal-Budhrani/document-verification-backend.git. Before running the project, you will need to set up the backend repository as well.
+Please note that this project depends on another repository, https://github.com/rohanbajaj19/Document-Verification-OCR.git. Before running the project, you will need to set up the backend repository as well.
 
 
 Usage
@@ -43,4 +43,4 @@ If you have any questions or suggestions about this project, please feel free to
 
 
 Note
-Please make sure to set up the backend repository, https://github.com/Kunal-Budhrani/document-verification-backend.git, before running this project.
+Please make sure to set up the backend repository, https://github.com/rohanbajaj19/Document-Verification-OCR.git, before running this project.
