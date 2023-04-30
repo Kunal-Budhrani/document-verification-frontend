@@ -17,7 +17,7 @@ const Header = () => {
               history.push("/");
             }}
             style={{ cursor: "pointer" }}>
-            Website Name
+            DV
           </Navbar.Brand>
           <Navbar.Toggle />
           <Navbar.Collapse>
