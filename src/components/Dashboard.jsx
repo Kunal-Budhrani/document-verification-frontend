@@ -7,14 +7,20 @@ import { Base } from "../common/Base";
 import { Form, Table, Tag, message } from "antd";
 import Dragger from "antd/es/upload/Dragger";
 import { storage, firestore } from "../firebase";
+import { verifyDocumentAPI } from "../apis/verify.api";
 
 export default function Dashboard() {
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState();
   const [documentName, setDocumentName] = useState();
   const { currentUser } = useAuth();
   const [userData, setUserData] = useState();
+  const history = useHistory();
+  useEffect(() => {
+    if (currentUser?.email === "admin@gmail.com") {
+      history.push("/admin");
+    }
+  }, [currentUser, history]);
   const columns = [
     {
       title: "File",
@@ -36,6 +42,43 @@ export default function Dashboard() {
         );
       },
     },
+    {
+      title: "Document Type",
+      key: "documentType",
+      render: (row) => {
+        return row.documentType ? (
+          <Tag color="blue">{row.documentType}</Tag>
+        ) : (
+          <Tag color="yellow">Not Available</Tag>
+        );
+      },
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (row) => {
+        return (
+          <>
+            <Button
+              variant="outline-success"
+              onClick={() => {
+                handleVerify(row.fileLink);
+              }}
+              className="mx-3"
+              disabled={row.status}>
+              Verify
+            </Button>
+            <Button
+              variant="outline-danger"
+              onClick={() => {
+                handleDeleteDocument(row.fileLink);
+              }}>
+              Delete
+            </Button>
+          </>
+        );
+      },
+    },
   ];
   useEffect(() => {
     if (documentUrl) {
@@ -49,9 +92,51 @@ export default function Dashboard() {
     setLoading(true);
     const userRef = firestore.collection("users").doc(currentUser.uid);
     const user = await userRef.get();
-    console.log(user.data());
     setUserData(user.data());
     setLoading(false);
+  };
+  const handleVerify = (fileLink) => {
+    setLoading(true);
+    verifyDocumentAPI(fileLink)
+      .then(async (res) => {
+        if (res.status === true) {
+          message.success("Document is verified");
+          const userRef = firestore.collection("users").doc(currentUser.uid);
+          const user = await userRef.get();
+          const userData = user.data();
+          const documentList = userData.documentList.map((document) => {
+            if (document.fileLink === fileLink) {
+              document.status = true;
+              document.documentType = res.doc_type;
+            }
+            return document;
+          });
+          userData.documentList = documentList;
+          userRef.set(userData);
+          getUserData();
+        } else {
+          message.error("Document is not verified");
+        }
+      })
+      .catch((err) => {
+        message.error("Error while verifying document");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+  const handleDeleteDocument = async (fileLink) => {
+    setLoading(true);
+    const userRef = firestore.collection("users").doc(currentUser.uid);
+    const user = await userRef.get();
+    const userData = user.data();
+    const documentList = userData.documentList.filter(
+      (document) => document.fileLink !== fileLink,
+    );
+    userData.documentList = documentList;
+
+    userRef.set(userData);
+    getUserData();
   };
   const addDocument = async () => {
     setUserData(null);
@@ -72,11 +157,14 @@ export default function Dashboard() {
         ],
       });
     }
+    setDocumentUrl(null);
+    setDocumentName(null);
     getUserData();
   };
   const handleDocumentUpload = (options) => {
     const { onSuccess, onError, file, onProgress } = options;
     const document = file;
+    setDocumentName(null);
     setDocumentUrl(null);
     setLoading(true);
     const ref = storage.ref("Documents/");
